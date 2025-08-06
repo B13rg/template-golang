@@ -29,4 +29,11 @@ go.work.sum
 
 # Editor/IDE
 # .idea/
-# .vscode/
+.vscode/
+
+vendor/
+dist/
+bin
+*.tar.gz
+tmp
+profiling
