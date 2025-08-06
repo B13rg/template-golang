@@ -42,7 +42,7 @@ tasks:
     cmds:
       - go fmt
       - go build
-      - task: 02-mkdocs
+      - task: 02_mkdocs
 
   02_mkdocs:
     desc: Uses mkdocs to build documentation site from docs
