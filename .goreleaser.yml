@@ -1,0 +1,96 @@
+project_name: template-golang
+version: 2
+before:
+  hooks:
+  - go mod download
+builds:
+  - env: [CGO_ENABLED=0]
+    goos:
+      - linux
+      - darwin
+    goarch:
+      - amd64
+    main: .
+    ldflags: -s -w -X main.version={{.Version}} -X main.commit={{.Commit}} -X main.date={{.Date}}
+    binary: kr8
+archives:
+  - formats: [tar.gz]
+    name_template: '{{ .ProjectName }}_{{ .Version }}_{{ .Os }}_{{ .Arch }}{{ if .Arm }}v{{ .Arm }}{{ end }}'
+    files:
+    - LICENSE*
+    - README*
+    - CHANGELOG*
+    - scripts/*
+    - docs/*
+snapshot:
+  version_template: SNAPSHOT-{{ .Commit }}
+dist: dist
+sboms:
+  - artifacts: archive
+
+#
+# ---
+#
+# nfpms:
+#   -
+#     vendor: 'Iceberg Tech'
+#     homepage: "https://github.com/ice-bergtech/kr8"
+#     maintainer: 'Iceberg Tech LLC'
+#     description: "An opinionated configuration management tool for Kubernetes Cluster"
+#     license: MIT
+#     formats:
+#       - rpm
+#       - deb
+#       - apk
+#     bindir: /usr/local/bin
+#
+# ---
+
+signs:
+  - cmd: cosign
+    certificate: "${artifact}.pem"
+    artifacts: checksum
+    args:
+      - sign-blob
+      - "--output-certificate=${certificate}"
+      - "--output-signature=${signature}"
+      - "${artifact}"
+      - "--yes"
+#
+# ---
+#
+# brews:
+#   # https://goreleaser.com/customization/homebrew/
+#   - name: kr8
+#     url_template: "https://github.com/ice-bergtech/kr8/releases/download/{{ .Tag }}/{{ .ArtifactName }}"
+#     url_headers:
+#     - "Accept: application/octet-stream"
+#     - 'Authorization: bearer #{ENV["HOMEBREW_TAP_GITHUB_TOKEN"]}'
+#     download_strategy: CurlDownloadStrategy
+#     repository:
+#       # defaults to github
+#       owner: ice-bergtech
+#       name: homebrew-tap
+#       branch: main
+#       token: "{{ .Env.HOMEBREW_TAP_GITHUB_TOKEN }}"
+#       pull_request:
+#         enabled: true
+#       # git:
+#       #   url: 'git@github.com:ice-bergtech/homebrew-tap.git'
+#       #   private_key: '{{ .Env.PRIVATE_KEY_PATH }}'
+
+
+#     commit_author:
+#       name: release
+#       email: release@icebergtech.xyz
+#     commit_msg_template: "Brew formula update for {{ .ProjectName }} version {{ .Tag }}"
+
+#     homepage: "https://ice-bergtech.github.io/kr8"
+#     description: "An opinionated configuration management tool for Kubernetes Clusters"
+#     license: MIT
+#     install: |
+#       bin.install "kr8"
+#     dependencies:
+#       - helm
+#       - jsonnet
+#       # - go-task
