@@ -1,0 +1,74 @@
+# https://taskfile.dev/usage
+version: '3'
+
+vars:
+  TOOL: tool
+
+tasks:
+  default:
+    cmds:
+      - task: build
+
+  01_setup:
+    desc: 'Instal dev tools'
+    aliases:
+      - setup
+      - s
+    cmds:
+      # https://golangci-lint.run/welcome/install/
+      - brew install golangci-lint
+      - brew upgrade golangci-lint
+      - pip install --user mkdocs
+      # parse profiling data
+      - go install github.com/google/pprof@latest
+
+
+  03_test-go:
+    desc: Test tool for your local system
+    aliases:
+      - test
+      - t
+    cmds:
+      - golangci-lint run
+      - go test -cover ./pkg/*
+      - task: 02_build
+      - task: 03_test-package
+
+  02_build:
+    desc: Build tool for your local system
+    aliases:
+      - build
+      - b
+    cmds:
+      - go fmt
+      - go build
+      - task: 02_mkdocs
+
+  02_mkdocs:
+    desc: Uses mkdocs to build documentation site from docs
+    aliases: ["mkdocs"]
+    cmds:
+      - go generate ./docs
+      # references mkdocs.yml
+      - mkdocs build
+
+  03_build-snapshot:
+    desc: Build a snapshot for all platforms using goreleaser
+    aliases:
+      - build-snapshot
+      - bs
+    cmds:
+      - go generate ./docs
+      - goreleaser release --snapshot --clean --skip=homebrew,docker
+
+  04_profile-generate:
+    desc: Capture profiling data from a tool generate of the examples.
+    aliases:
+      - profile
+    cmds:
+      - mkdir -p ./profiling
+      - ./{{.TOOL}} generate -B examples --profiledir ./profiling {{.CLI_ARGS}}
+      - go tool pprof -png -output ./profiling/cpu.png ./tool ./profiling/profile_cpu.pb.gz
+      - go tool pprof -png -output ./profiling/heap.png ./{{.TOOL}} ./profiling/profile_heap.pb.gz
+      #- go tool pprof -http=0.0.0.0:8654 ./{{.TOOL}} ./profiling/profile_cpu.pb.gz
+      #- go tool pprof -http=0.0.0.0:8654 ./{{.TOOL}} ./profiling/profile_heap.pb.gz
